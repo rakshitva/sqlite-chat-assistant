@@ -4,7 +4,7 @@ import sqlite3
 import re
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/ask": {"origins": "http://localhost:3000"}})  # Allow only requests from localhost:3000
 
 # Connect to SQLite database
 def get_db_connection():
@@ -29,7 +29,6 @@ def ask():
         answer = f"Here are the employees: {', '.join(employee_names)}"
     
     elif "manager of the" in query:
-        # Handle department name extraction from query
         match = re.search(r"manager of the (\w+)", query)
         if match:
             department = match.group(1)
