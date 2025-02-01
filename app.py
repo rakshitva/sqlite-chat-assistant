@@ -1,54 +1,33 @@
-from flask import Flask, request, jsonify
-import sqlite3
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# Initialize SQLite database
-DATABASE = 'chat_assistant.db'
+# Route to render the frontend (HTML page)
+@app.route('/')
+def index():
+    return render_template('index.html')  # Render the HTML page when the user accesses the root URL
 
-# Function to execute queries
-def execute_query(query, params=()):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    conn.commit()
-    conn.close()
-
-# Function to fetch query results
-def fetch_query(query, params=()):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    result = cursor.fetchall()
-    conn.close()
-    return result
-
-# Route for the root of the website
-@app.route("/")
-def home():
-    return "Welcome to the Chat Assistant API!"
-
-# Route to handle chat queries
-@app.route("/chat", methods=["POST"])
+# Route to handle the chat query
+@app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
-    query = data.get('query', '')
+    query = data.get("query")
     
-    if not query:
-        return jsonify({"response": "No query provided."}), 400
-
-    # Look for the query in the database
-    if 'manager' in query.lower():
-        department = query.split('manager of the ')[1].split(' department')[0]
-        result = fetch_query("SELECT manager FROM department WHERE name=?", (department,))
-        if result:
-            response = f"The manager of the {department} department is {result[0][0]}."
-        else:
-            response = f"No manager found for the department '{department}'."
-    else:
-        response = "I'm sorry, I don't understand the question."
-
+    # Handle the query (you can add your own logic here for the chatbot)
+    response = handle_query(query)
+    
     return jsonify({"response": response})
 
+# Function to handle user queries (modify this with your own logic)
+def handle_query(query):
+    # Example logic: if the query matches a certain text, return a predefined response
+    if query.lower() == "who is the manager of the sales department?":
+        return "John Doe is the manager of the Sales department."
+    elif query.lower() == "what is the company mission?":
+        return "Our mission is to innovate and provide excellent customer service."
+    # Add more logic or AI model calls to handle different queries
+    return "Sorry, I couldn't understand the query."
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Running the app
+    app.run(debug=True, host="0.0.0.0", port=5000)
