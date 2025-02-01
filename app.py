@@ -1,17 +1,16 @@
 from flask import Flask, render_template, request, jsonify
-import sqlite3
 
 app = Flask(__name__)
 
 # Mock function to simulate bot answers based on queries
 def get_answer(query):
-    # Here you can add logic to handle different queries, like querying a database
+    # Handle specific queries
     if "employee names" in query.lower():
         return "Alice, Bob, Charlie, David"  # Mocked response
     elif "departments" in query.lower():
         return "HR, IT, Sales, Marketing"  # Mocked response
     else:
-        return "Sorry, I couldn't understand your query."
+        return "Sorry, I couldn't understand your query. Could you please rephrase it?"
 
 @app.route('/')
 def index():
@@ -27,9 +26,6 @@ def ask():
 
         # Process the query and get the response from the bot
         response = get_answer(user_query)
-        
-        if not response:
-            return jsonify({'error': 'No response found'}), 500
 
         # Return the response back to the frontend
         return jsonify({'answer': response}), 200
@@ -40,3 +36,4 @@ def ask():
 
 if __name__ == '__main__':
     app.run(debug=True)
+

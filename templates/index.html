@@ -15,6 +15,8 @@
         .message { margin-bottom: 10px; }
         .bot-message { color: green; }
         .user-message { color: blue; }
+        .bot-image { max-width: 50px; vertical-align: middle; margin-right: 10px; }
+        .ai-image { max-width: 100px; vertical-align: middle; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -32,7 +34,13 @@
         const newMessage = document.createElement('div');
         newMessage.classList.add('message');
         newMessage.classList.add(sender === 'bot' ? 'bot-message' : 'user-message');
-        newMessage.innerText = message;
+
+        if (sender === 'bot') {
+            newMessage.innerHTML = `<img class="bot-image" src="https://via.placeholder.com/50" alt="Bot">` + message;
+        } else {
+            newMessage.innerHTML = `<img class="ai-image" src="https://via.placeholder.com/100x100" alt="AI">` + message;
+        }
+
         chatBox.appendChild(newMessage);
         chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to the bottom
     }
