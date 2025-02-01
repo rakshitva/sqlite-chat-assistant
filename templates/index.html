@@ -5,101 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Assistant</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
-        .chat-container {
-            width: 80%;
-            max-width: 600px;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .chat-box {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .input-box {
-            display: flex;
-            gap: 10px;
-        }
-        input[type="text"] {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; color: #333; }
+        .container { width: 50%; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; }
+        #chat-box { height: 300px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; }
+        input[type="text"] { width: 80%; padding: 10px; margin-right: 10px; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; }
+        button:hover { background-color: #0056b3; }
+        .message { margin-bottom: 10px; }
+        .bot-message { color: green; }
+        .user-message { color: blue; }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h1>Chat Assistant</h1>
-        <div id="chat-box" class="chat-box">
-            <p>Welcome to the Chat Assistant! How can I help you today?</p>
-        </div>
-        <div class="input-box">
-            <input type="text" id="query" placeholder="Ask your question..." />
-            <button onclick="sendQuery()">Send</button>
-        </div>
-    </div>
 
-    <script>
-        function sendQuery() {
-            var query = document.getElementById("query").value;
-            if (query.trim() === "") {
-                alert("Please enter a query.");
-                return;
+<div class="container">
+    <h1>Welcome to the Chat Assistant!</h1>
+    <div id="chat-box"></div>
+    <input type="text" id="user-query" placeholder="Ask something..." />
+    <button onclick="sendQuery()">Ask</button>
+</div>
+
+<script>
+    function appendMessage(message, sender) {
+        const chatBox = document.getElementById('chat-box');
+        const newMessage = document.createElement('div');
+        newMessage.classList.add('message');
+        newMessage.classList.add(sender === 'bot' ? 'bot-message' : 'user-message');
+        newMessage.innerText = message;
+        chatBox.appendChild(newMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to the bottom
+    }
+
+    function sendQuery() {
+        const userQuery = document.getElementById('user-query').value;
+        if (!userQuery.trim()) return;
+
+        // Display user message
+        appendMessage(userQuery, 'user');
+
+        // Clear input
+        document.getElementById('user-query').value = '';
+
+        // Send request to backend
+        fetch('https://rakshit-chatbot.onrender.com/ask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: userQuery })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Display bot response
+            if (data.answer) {
+                appendMessage(data.answer, 'bot');
+            } else {
+                appendMessage("Sorry, something went wrong. Please try again.", 'bot');
             }
+        })
+        .catch(error => {
+            appendMessage("Sorry, an error occurred. Please try again later.", 'bot');
+            console.error('Error:', error);
+        });
+    }
+</script>
 
-            var chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML += "<p><strong>You:</strong> " + query + "</p>";
-
-            fetch('https://rakshit-chatbot.onrender.com/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query: query })
-            })
-            .then(response => response.json())
-            .then(data => {
-                chatBox.innerHTML += "<p><strong>Bot:</strong> " + data.response + "</p>";
-                chatBox.scrollTop = chatBox.scrollHeight;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                chatBox.innerHTML += "<p><strong>Bot:</strong> Sorry, there was an error processing your request.</p>";
-            });
-
-            document.getElementById("query").value = ""; // Clear input field
-        }
-    </script>
 </body>
 </html>

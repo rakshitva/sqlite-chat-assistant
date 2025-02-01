@@ -1,33 +1,42 @@
 from flask import Flask, render_template, request, jsonify
+import sqlite3
 
 app = Flask(__name__)
 
-# Route to render the frontend (HTML page)
+# Mock function to simulate bot answers based on queries
+def get_answer(query):
+    # Here you can add logic to handle different queries, like querying a database
+    if "employee names" in query.lower():
+        return "Alice, Bob, Charlie, David"  # Mocked response
+    elif "departments" in query.lower():
+        return "HR, IT, Sales, Marketing"  # Mocked response
+    else:
+        return "Sorry, I couldn't understand your query."
+
 @app.route('/')
 def index():
-    return render_template('index.html')  # Render the HTML page when the user accesses the root URL
+    return render_template('index.html')
 
-# Route to handle the chat query
-@app.route('/chat', methods=['POST'])
-def chat():
-    data = request.get_json()
-    query = data.get("query")
-    
-    # Handle the query (you can add your own logic here for the chatbot)
-    response = handle_query(query)
-    
-    return jsonify({"response": response})
+@app.route('/ask', methods=['POST'])
+def ask():
+    try:
+        # Get the user query from the frontend
+        user_query = request.json.get('query')
+        if not user_query:
+            return jsonify({'error': 'No query provided'}), 400
 
-# Function to handle user queries (modify this with your own logic)
-def handle_query(query):
-    # Example logic: if the query matches a certain text, return a predefined response
-    if query.lower() == "who is the manager of the sales department?":
-        return "John Doe is the manager of the Sales department."
-    elif query.lower() == "what is the company mission?":
-        return "Our mission is to innovate and provide excellent customer service."
-    # Add more logic or AI model calls to handle different queries
-    return "Sorry, I couldn't understand the query."
+        # Process the query and get the response from the bot
+        response = get_answer(user_query)
+        
+        if not response:
+            return jsonify({'error': 'No response found'}), 500
 
-if __name__ == "__main__":
-    # Running the app
-    app.run(debug=True, host="0.0.0.0", port=5000)
+        # Return the response back to the frontend
+        return jsonify({'answer': response}), 200
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': 'An error occurred while processing your request'}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
