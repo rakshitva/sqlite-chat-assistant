@@ -4,8 +4,9 @@ import sqlite3
 import re
 
 app = Flask(__name__)
-# Update CORS to allow the frontend URL from Netlify
-CORS(app, origins='https://chatsql.netlify.app')
+
+# Update CORS to allow both the frontend URL from Netlify and local development URL
+CORS(app, origins=['https://chatsql.netlify.app', 'http://localhost:5500'])
 
 # Connect to SQLite database
 def get_db_connection():
@@ -17,8 +18,12 @@ def get_db_connection():
 def index():
     return "Welcome to the Chat Assistant!"
 
-@app.route('/ask', methods=['POST'])
+@app.route('/ask', methods=['OPTIONS', 'POST'])  # Handle both OPTIONS (preflight) and POST
 def ask():
+    if request.method == 'OPTIONS':
+        # Respond with status code 200 for OPTIONS preflight
+        return '', 200
+    
     data = request.get_json()
     query = data.get("query", "").lower()
     conn = get_db_connection()
