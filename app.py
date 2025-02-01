@@ -4,7 +4,8 @@ import sqlite3
 import re
 
 app = Flask(__name__)
-CORS(app, origins='*')
+# Update CORS to allow the frontend URL from Netlify
+CORS(app, origins='https://chatsql.netlify.app')
 
 # Connect to SQLite database
 def get_db_connection():
