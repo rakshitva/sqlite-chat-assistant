@@ -4,7 +4,7 @@ import sqlite3
 import re
 
 app = Flask(__name__)
-CORS(app, resources={r"/ask": {"origins": "http://localhost:5500"}})  # Allow only requests from localhost:3000
+CORS(app, origins='*')
 
 # Connect to SQLite database
 def get_db_connection():
