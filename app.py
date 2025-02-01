@@ -1,34 +1,76 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
+import sqlite3
+import re
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Mock function to simulate bot answers based on queries
-def get_answer(query):
-    if "employee names" in query.lower():
-        return "Alice, Bob, Charlie, David"
-    elif "departments" in query.lower():
-        return "HR, IT, Sales, Marketing"
-    else:
-        return "Sorry, I couldn't understand your query. Could you please rephrase it?"
+# Connect to SQLite database
+def get_db_connection():
+    conn = sqlite3.connect('company.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return "Welcome to the Chat Assistant!"
 
 @app.route('/ask', methods=['POST'])
 def ask():
-    try:
-        user_query = request.json.get('query')
-        if not user_query:
-            return jsonify({'error': 'No query provided'}), 400
+    data = request.get_json()
+    query = data.get("query", "").lower()
+    conn = get_db_connection()
 
-        response = get_answer(user_query)
-        return jsonify({'answer': response}), 200
+    # Query handling logic
+    if "list all employees" in query:
+        employees = conn.execute('SELECT Name FROM Employees').fetchall()
+        employee_names = [employee['Name'] for employee in employees]
+        answer = f"Here are the employees: {', '.join(employee_names)}"
+    
+    elif "manager of the" in query:
+        # Handle department name extraction from query
+        match = re.search(r"manager of the (\w+)", query)
+        if match:
+            department = match.group(1)
+            manager = conn.execute('SELECT Manager FROM Departments WHERE Name LIKE ?', (f'%{department}%',)).fetchone()
+            if manager:
+                answer = f"The manager of the {department} department is {manager['Manager']}."
+            else:
+                answer = f"Sorry, I couldn't find the manager for the {department} department."
+        else:
+            answer = "Sorry, I couldn't understand the department name in your query."
+    
+    elif "list all employees in the" in query:
+        match = re.search(r"list all employees in the (\w+)", query)
+        if match:
+            department = match.group(1)
+            employees = conn.execute('SELECT Name FROM Employees WHERE Department LIKE ?', (f'%{department}%',)).fetchall()
+            if employees:
+                employee_names = [employee['Name'] for employee in employees]
+                answer = f"Here is the list of employees in the {department} department: {', '.join(employee_names)}"
+            else:
+                answer = f"No employees found in the {department} department."
+        else:
+            answer = "Sorry, I couldn't understand the department name in your query."
 
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({'error': 'An error occurred while processing your request'}), 500
+    elif "salary expense of" in query:
+        match = re.search(r"salary expense of the (\w+)", query)
+        if match:
+            department = match.group(1)
+            total_salary = conn.execute('SELECT SUM(Salary) AS TotalSalary FROM Employees WHERE Department LIKE ?', (f'%{department}%',)).fetchone()
+            if total_salary and total_salary['TotalSalary']:
+                answer = f"The total salary expense of the {department} department is {total_salary['TotalSalary']}."
+            else:
+                answer = f"No salary data found for the {department} department."
+        else:
+            answer = "Sorry, I couldn't understand the department name in your query."
+
+    else:
+        answer = "Sorry, I couldn't understand your query. Please try again."
+
+    conn.close()
+    return jsonify({"answer": answer})
 
 if __name__ == '__main__':
     app.run(debug=True)
-
